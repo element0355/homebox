@@ -91,13 +91,31 @@
 
   const parent = ref<LocationSummary | any>({});
 
+  // Recursive function to get all child location IDs
+  const getAllChildLocationIds = (loc) => {
+    if (!loc.children || loc.children.length === 0) {
+      return [];
+    }
+    
+    const directChildIds = loc.children.map(child => child.id);
+    const nestedChildIds = loc.children.flatMap(child => 
+      getAllChildLocationIds(child)
+    );
+    
+    return [...directChildIds, ...nestedChildIds];
+  };
+
   const items = computedAsync(async () => {
     if (!location.value) {
       return [];
     }
-
+    
+    // Get current location and all descendant location IDs
+    const allChildLocationIds = getAllChildLocationIds(location.value);
+    const locationsToQuery = [location.value.id, ...allChildLocationIds];
+    
     const resp = await api.items.getAll({
-      locations: [location.value.id],
+      locations: locationsToQuery,
     });
 
     if (resp.error) {
